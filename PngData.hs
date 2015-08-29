@@ -8,20 +8,20 @@ type Hex = String
 
 
 data PngFile = PngFile {
-    fHeader      :: FileHeader,
-    fHeaderChunk :: HeaderChunk,
-    fChunks      :: [Chunk]
+    fSignature :: Signature,
+    fHeader    :: Header,
+    fChunks    :: [Chunk]
 }
 
 
-data FileHeader = FileHeader {
+data Signature = Signature {
     hCode :: Hex,
     hExt  :: String,
     hCLRF :: Hex
 } deriving (Show)
 
 
-data HeaderChunk = HeaderChunk {
+data Header = Header {
     dLength    :: Int,
     dType      :: String,
     dWidth     :: Int,
@@ -46,9 +46,9 @@ data Chunk = Chunk {
 
 
 instance Show PngFile where
-  show x = show(dWidth $ fHeaderChunk x) ++
+  show x = show(dWidth $ fHeader x) ++
            " x " ++
-           show(dHeight $ fHeaderChunk x) ++
+           show(dHeight $ fHeader x) ++
            " PNG File, " ++
            (show (1 + length (fChunks x))) ++
            " chunks"
