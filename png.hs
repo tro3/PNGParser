@@ -4,6 +4,8 @@ module Png where
 import Numeric
 import Data.List
 import qualified Data.ByteString as B
+import qualified Data.ByteString.Lazy as L
+import Codec.Compression.Zlib
 
 import BStringParse
 import PngData
@@ -57,7 +59,10 @@ parseChunks = do loop []
       if (cType chunk) == "IEND"
       then return chunks'
       else loop $ chunks'
-      
+
+
+decompressedData :: PngFile -> [Integer]
+decompressedData = (map toInteger).L.unpack.decompress.L.fromStrict.showData
 
 readPng :: String -> IO PngFile
 readPng fname = do
@@ -70,3 +75,25 @@ readPng fname = do
             chunks <- parseChunks
             return $ PngFile hdr dhdr chunks
 
+
+
+main = do
+  f <- readPng "small.png"
+  print f
+  print $ fHeader f
+  print $ showTypes f
+  print $ decompressedData f
+  print "--------------------"
+  
+  f <- readPng "small2.png"
+  print f
+  print $ fHeader f
+  print $ showTypes f
+  print $ decompressedData f
+  print "--------------------"
+  
+  f <- readPng "small3.png"
+  print f
+  print $ fHeader f
+  print $ showTypes f
+  print $ decompressedData f  

@@ -2,6 +2,7 @@
 module PngData where
 
 import qualified Data.ByteString as B
+import qualified Numeric as N
 
 
 type Hex = String
@@ -52,6 +53,20 @@ instance Show PngFile where
            " PNG File, " ++
            (show (1 + length (fChunks x))) ++
            " chunks"
+
+
+showTypes :: PngFile -> [String]
+showTypes = (map cType).fChunks
+
+showData :: PngFile -> B.ByteString
+showData = B.concat.(map cData).(filter isDAT).fChunks
+  where isDAT x = cType x == "IDAT"
+
+showHex :: B.ByteString -> [String]
+showHex = map (toHex.toInteger) <$> B.unpack
+  where toHex x = N.showHex x ""
+
+
 
 --instance Show Chunk where
 --  show x = chkType x
