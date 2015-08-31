@@ -64,7 +64,7 @@ parseChunks = do loop []
 decompressedData :: PngFile -> [Integer]
 decompressedData = (map toInteger).L.unpack.decompress.L.fromStrict.showData
 
-readPng :: String -> IO PngFile
+readPng :: String -> IO (Either String PngFile)
 readPng fname = do
         stream <- B.readFile fname
         return $ run parser stream
@@ -78,22 +78,22 @@ readPng fname = do
 
 
 main = do
-  f <- readPng "small.png"
-  print f
-  print $ fHeader f
-  print $ showTypes f
-  print $ decompressedData f
-  print "--------------------"
+  fread "ul.png"
+  fread "ur.png"
+  fread "ll.png"
+  fread "lr.png"
   
-  f <- readPng "small2.png"
-  print f
-  print $ fHeader f
-  print $ showTypes f
-  print $ decompressedData f
-  print "--------------------"
+  where
+    fread fname = do
+      f <- readPng fname
+      fshow f
+    
+    fshow (Left msg) = print msg
+    fshow (Right f) = do
+      print f
+      print $ fHeader f
+      print $ showTypes f
+      print $ decompressedData f
+      print "--------------------\n"
+    
   
-  f <- readPng "small3.png"
-  print f
-  print $ fHeader f
-  print $ showTypes f
-  print $ decompressedData f  

@@ -21,7 +21,7 @@ import qualified Data.ByteString.Char8 as C
 
 type BString = B.ByteString
 
-data State a = S (BString -> (BString, a))
+data State a = S (BString -> (BString,  Either String a))
 
 instance Functor State where
 
@@ -30,7 +30,7 @@ instance Functor State where
       cfinal b0 = (b1, a2)
         where
           (b1, a1) = c0 b0
-          a2 = fn a1
+          a2 = fn <$> a1
         
 
 instance Applicative State where
@@ -41,9 +41,9 @@ instance Applicative State where
         where
           (b1, fn) = cfn b0
           (b2, a1) = c0 b1
-          a2 = fn a1
+          a2 = fn <*> a1
           
-  pure x = S (\b0 -> (b0, x))
+  pure x = S (\b0 -> (b0, Right x))
 
 
 instance Monad State where
@@ -53,19 +53,21 @@ instance Monad State where
       cfinal b0 = (b2, a2)
         where
           (b1, a1) = c0 b0
-          (S c1) = f a1
+          (S c1) = checkLeft f a1
           (b2, a2) = c1 b1
+          checkLeft _ (Left x) = S (\b -> (b, Left x))
+          checkLeft f (Right x) = f x
           
   return a = S cfinal
     where
-      cfinal b0 = (b0, a)
+      cfinal b0 = (b0, Right a)
 
 
-getClosure :: State a -> (BString -> (BString, a))
+getClosure :: State a -> (BString -> (BString, Either String a))
 getClosure (S x) = x
 
 
-run ::  State a -> BString -> a
+run ::  State a -> BString -> Either String a
 run s b = a
   where (_, a) = getClosure s b
 
@@ -73,7 +75,9 @@ run s b = a
 getBString :: Int -> State BString
 getBString n = S closure
   where
-    closure b = (b', bytes)
+    closure b = if B.length b < n
+                then (b, Left "Unexpected end of stream")
+                else (b', Right bytes)
       where
         (bytes, b') = B.splitAt n b
 
@@ -103,15 +107,15 @@ getHex n = do
 
 
 
------------------------------------------------------------------------
-  
-testBS = B.pack [65, 66, 255, 0]
+-------------------------------------------------------------------------
+
+testBS = B.pack [0, 0, 0, 0]
 
 test :: State String
 test = do
   x <- getString 2
-  y <- getInt 2
-  return $ x ++ " " ++ show y
+  y <- getString 4
+  return $ show x ++ " " ++ show y
 
-testParse :: BString -> String
+testParse :: BString -> Either String String
 testParse = run test
